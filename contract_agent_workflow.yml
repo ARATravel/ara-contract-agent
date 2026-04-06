@@ -1,0 +1,42 @@
+name: 📋 ARA Contract Agent
+
+on:
+  schedule:
+    - cron: "0 * * * *"   # كل ساعة
+  workflow_dispatch:       # تشغيل يدوي
+
+jobs:
+  import-contracts:
+    name: Import New Contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install \
+            anthropic \
+            supabase \
+            httpx \
+            pdfplumber \
+            openpyxl \
+            python-docx
+
+      - name: Run Contract Agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SUPABASE_URL:      ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY:      ${{ secrets.SUPABASE_KEY }}
+          TENANT_ID:         ${{ secrets.TENANT_ID }}
+          CLIENT_ID:         ${{ secrets.CLIENT_ID }}
+          CLIENT_SECRET:     ${{ secrets.CLIENT_SECRET }}
+          SP_CONTRACTS_FOLDER: "/sites/SourcingandContractingDepartment/Shared Documents/ARA Brain Contracts"
+        run: python contract_agent.py
