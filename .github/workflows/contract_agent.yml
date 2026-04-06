@@ -38,5 +38,5 @@ jobs:
           TENANT_ID:         ${{ secrets.TENANT_ID }}
           CLIENT_ID:         ${{ secrets.CLIENT_ID }}
           CLIENT_SECRET:     ${{ secrets.CLIENT_SECRET }}
-          SP_CONTRACTS_FOLDER: "/sites/SourcingandContractingDepartment/Shared Documents/ARA Brain Contracts"
+          
         run: python contract_agent.py
