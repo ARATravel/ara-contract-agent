@@ -67,37 +67,42 @@ async def get_graph_token() -> str:
 
 
 async def get_new_contracts(token: str) -> list:
-    """
-    يجلب الملفات من SharePoint ويتجاهل ما تم معالجته مسبقاً.
-    يتحقق من الـ file_hash في Supabase لتجنب التكرار.
-    """
     processed_hashes = set()
     if supa:
         try:
             resp = supa.table("contract_import_log") \
-                .select("file_hash") \
-                .execute()
+                .select("file_hash").execute()
             processed_hashes = {r["file_hash"] for r in (resp.data or [])}
         except:
-            pass  # الجدول غير موجود بعد — سيُنشأ لاحقاً
+            pass
 
     async with httpx.AsyncClient(timeout=30) as http:
-        # جلب قائمة الملفات من المجلد
+
+        # خطوة 1: جلب الـ Site ID
         r = await http.get(
-            f"https://graph.microsoft.com/v1.0/sites/{SP_SITE}"
-            f":/drive/root:{SP_CONTRACTS_FOLDER}:/children"
-            "?$select=id,name,size,lastModifiedDateTime,@microsoft.graph.downloadUrl"
-            "&$top=200",
+            f"https://graph.microsoft.com/v1.0/sites/"
+            f"arasaudi.sharepoint.com:/sites/SourcingandContractingDepartment",
             headers={"Authorization": f"Bearer {token}"}
         )
-        
-        if r.status_code != 200:
-            print(f"  ⚠️  SharePoint error {r.status_code}: {r.text[:200]}")
+        site_id = r.json().get("id", "")
+        print(f"  Site ID: {site_id}")
+
+        # خطوة 2: جلب الملفات من المجلد
+        folder_path = "ARA Brain Contracts"
+        r2 = await http.get(
+            f"https://graph.microsoft.com/v1.0/sites/{site_id}"
+            f"/drive/root:/{folder_path}:/children"
+            f"?$select=id,name,size,lastModifiedDateTime"
+            f"&$top=200",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+
+        if r2.status_code != 200:
+            print(f"  ⚠️  SharePoint error {r2.status_code}: {r2.text[:300]}")
             return []
 
-        files = r.json().get("value", [])
+        files = r2.json().get("value", [])
 
-    # فلتر: PDF و Excel و Word فقط، وغير مُعالَج مسبقاً
     new_files = []
     for f in files:
         name = f.get("name", "")
@@ -105,15 +110,14 @@ async def get_new_contracts(token: str) -> list:
         if ext not in [".pdf", ".xlsx", ".xls", ".docx", ".doc"]:
             continue
 
-        # hash بسيط من الاسم + الحجم + تاريخ التعديل
-        file_sig = f"{name}_{f.get('size',0)}_{f.get('lastModifiedDateTime','')}"
+        file_sig  = f"{name}_{f.get('size',0)}_{f.get('lastModifiedDateTime','')}"
         file_hash = hashlib.md5(file_sig.encode()).hexdigest()
 
         if file_hash not in processed_hashes:
             f["file_hash"] = file_hash
             new_files.append(f)
 
-    print(f"  📁 SharePoint: {len(files)} ملف إجمالي | {len(new_files)} جديد")
+    print(f"  📁 SharePoint: {len(files)} ملف | {len(new_files)} جديد")
     return new_files
 
 
