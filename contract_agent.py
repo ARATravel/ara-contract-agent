@@ -31,7 +31,9 @@ CLIENT_ID      = os.environ.get("CLIENT_ID", "")
 CLIENT_SECRET  = os.environ.get("CLIENT_SECRET", "")
 
 # SharePoint — المجلد الجديد للعقود
-SP_SITE        = "SourcingandContractingDepartment"
+SP_SITE        = "arasaudi.sharepoint.com,$(SITE_ID)"
+SP_HOST        = "arasaudi.sharepoint.com"
+SP_SITE_PATH   = "/sites/SourcingandContractingDepartment"
 SP_CONTRACTS_FOLDER = os.environ.get(
     "SP_CONTRACTS_FOLDER",
     "/sites/SourcingandContractingDepartment/Shared Documents/ARA Brain Contracts"
