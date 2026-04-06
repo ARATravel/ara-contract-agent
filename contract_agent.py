@@ -462,7 +462,7 @@ async def extract_contract_data(file_content: dict, filename: str) -> dict:
             },
             json={
                 "model":      MODEL,
-                "max_tokens": 8000,
+                "max_tokens": 16000,
                 "system":     MASTER_EXTRACTION_PROMPT,
                 "messages":   [{"role": "user", "content": user_message}]
             }
