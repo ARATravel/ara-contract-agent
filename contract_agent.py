@@ -122,18 +122,24 @@ async def get_new_contracts(token: str) -> list:
 
 
 async def download_file(token: str, file_info: dict) -> bytes:
-    """تحميل ملف من SharePoint"""
-    download_url = file_info.get("@microsoft.graph.downloadUrl", "")
-    if not download_url:
-        # جلب رابط التحميل
-        async with httpx.AsyncClient(timeout=30) as http:
-            r = await http.get(
-                f"https://graph.microsoft.com/v1.0/sites/{SP_SITE}"
-                f"/drive/items/{file_info['id']}/content",
-                headers={"Authorization": f"Bearer {token}"},
-                follow_redirects=True
-            )
-            return r.content
+    async with httpx.AsyncClient(timeout=60) as http:
+
+        # جلب الـ Site ID
+        r = await http.get(
+            f"https://graph.microsoft.com/v1.0/sites/"
+            f"arasaudi.sharepoint.com:/sites/SourcingandContractingDepartment",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        site_id = r.json().get("id", "")
+
+        # تحميل الملف
+        r2 = await http.get(
+            f"https://graph.microsoft.com/v1.0/sites/{site_id}"
+            f"/drive/items/{file_info['id']}/content",
+            headers={"Authorization": f"Bearer {token}"},
+            follow_redirects=True
+        )
+        return r2.content
 
     async with httpx.AsyncClient(timeout=60) as http:
         r = await http.get(download_url)
